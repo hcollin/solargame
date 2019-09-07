@@ -1,0 +1,14 @@
+{
+  "name": "solarexpance-design",
+  "version": "0.1.0",
+  "description": "Game logic function testing for design purposes",
+  "main": "index.js",
+  "author": "Frost Troll",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest --watch"
+  },
+  "devDependencies": {
+    "jest": "^24.9.0"
+  }
+}
