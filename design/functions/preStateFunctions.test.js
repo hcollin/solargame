@@ -8,7 +8,6 @@ describe("Pre Game functions", () => {
         expect(game.maxPlayers).toBe(8);
         expect(game.minPlayers).toBe(2);
         expect(typeof game.id).toBe("string");
-        expect(game.id).toBe("game-id-1");
         expect(game.maxTurnTimeInMs).toBe(1000*60*60*24);
         expect(game)
     });

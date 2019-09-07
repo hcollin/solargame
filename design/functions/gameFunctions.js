@@ -1,3 +1,5 @@
+const { randomId } = require("./utils.js");
+
 /**
  * Compile new gamestate from current state and player commands
  *
@@ -5,6 +7,7 @@
  * @param {*} orders
  */
 function turnCompiler(gameState) {
+
     if (gameState.gameStartedAt === null || gameState.gameEndedAt !== null) {
         throw new Error(
             `Game '${gameState.id}' cannot be compiled as it is not running. Started: ${gameState.gameStartedAt}, Finished: ${gameState.gameEndedAt}`
@@ -22,23 +25,33 @@ function turnCompiler(gameState) {
         );
         return gameState;
     } else {
-        if(gameState.alwaysCompile) {
-            console.warn(`Game ${gameState.id} has been set to always compile turns.`);
+        if(gameState.alwaysCompile && process.env.NODE_ENV !== "test") {
+            console.warn(`Game ${gameState.id} has been set to always compile turns.}`);
         }
     }
 
     // Create a new shallow instance of the current gameState
     const newState = Object.assign({}, gameState);
 
+    // Execute orders
+    newState.orders.forEach(order => {
+        newState.compiledOrders.push(order);
+    });
+    newState.orders = [];
+
+    // Update turn information
     newState.turn++;
     newState.lastTurnCompiledAt = Date.now();
+    newState.playersReadyForThisTurn = [];
     return newState;
 }
 
 function addOrder(gameState, player, order) {
+    
     const newState = { ...gameState };
 
     newState.orders.push({
+        id: randomId("order-"),
         game: gameState.id,
         turn: gameState.turn,
         player: player.id,
@@ -49,9 +62,18 @@ function addOrder(gameState, player, order) {
     return newState;
 }
 
-function deleteOrder(gameState, order) {}
+function deleteOrder(gameState, orderId) {
+
+    const newState = { ...gameState };
+
+    newState.orders =  gameState.orders.filter(or => or.id === orderId);
+
+    return newState;
+
+}
 
 function commitTurn(gameState, player) {
+    
     if (gameState.playersReadyForThisTurn.find(pl => pl === player.id)) {
         throw new Error(`Player ${player.name} has already commited his/her turn`);
     }
@@ -68,4 +90,9 @@ function commitTurn(gameState, player) {
     return newState;
 }
 
-module.exports = { turnCompiler, addOrder, commitTurn };
+function getPlayerForUserInGame(gameState, user) {
+    return gameState.players.find(pl => pl.user === user.id);
+}
+
+
+module.exports = { turnCompiler, addOrder, commitTurn, deleteOrder, getPlayerForUserInGame };
