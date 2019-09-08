@@ -72,8 +72,6 @@ These ideas are guidelines for the game design and making itself. Some of them a
 
 
 
-
-
 ## Inspirational sources
 
 Video Games (new and old):
