@@ -87,6 +87,7 @@ Tabletop Games:
 * Food Chain Magnate
 * Eclipse
 * Cyberpunk 2020
+* Diplomacy
 
 Movies, TV and books
 * Expanse TV series
