@@ -1,4 +1,4 @@
-const { createNewGame, addNewPlayerToGame, startGame } = require("./preStartFunctions");
+const { createNewGame, addNewPlayerToGame, startGame } = require("./preGameFunctions");
 
 describe("Pre Game functions", () => {
     it("Game is created", () => {

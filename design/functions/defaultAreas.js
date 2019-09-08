@@ -7,7 +7,7 @@
 
 
 const defaultAreas = [
-    
+
     // SOLAR SYSTEM
     {
         id: "solar-system",
@@ -207,7 +207,7 @@ const defaultAreas = [
         type: "Planet",
         name: "Mars: Orbit",
         edges: ["solar-system"]
-        
+
     },
 
     // JUPITER
@@ -246,13 +246,9 @@ const defaultAreas = [
     {
         id: "planet-9-orbit-1",
         type: "Planet",             // YES IT IS PLANET! MAKE PLUTO GREAT AGAIN DAMMIT!
-        name: "Pluto: Orbit",              
+        name: "Pluto: Orbit",
         edges: ["solar-system"]
     },
-
-
-
-
 ];
 
 module.exports = { defaultAreas };

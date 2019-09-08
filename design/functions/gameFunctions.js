@@ -1,5 +1,7 @@
 const { randomId } = require("./utils.js");
 
+const Orders = require('./gameOrders');
+
 /**
  * Compile new gamestate from current state and player commands
  *
@@ -31,10 +33,12 @@ function turnCompiler(gameState) {
     }
 
     // Create a new shallow instance of the current gameState
-    const newState = Object.assign({}, gameState);
+    let newState = Object.assign({}, gameState);
 
+    const orders = newState.orders;
     // Execute orders
-    newState.orders.forEach(order => {
+    orders.forEach(order => {
+        newState = Orders.main(newState, order.player, order);
         newState.compiledOrders.push(order);
     });
     newState.orders = [];
@@ -93,6 +97,5 @@ function commitTurn(gameState, player) {
 function getPlayerForUserInGame(gameState, user) {
     return gameState.players.find(pl => pl.user === user.id);
 }
-
 
 module.exports = { turnCompiler, addOrder, commitTurn, deleteOrder, getPlayerForUserInGame };

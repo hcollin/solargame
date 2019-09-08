@@ -2,7 +2,7 @@ const {sleeper} = require('./utils.js');
 
 const { turnCompiler, addOrder, commitTurn, deleteOrder, getPlayerForUserInGame } = require('./gameFunctions');
 
-const { createNewGame, addNewPlayerToGame, startGame } = require("./preStartFunctions");
+const { createNewGame, addNewPlayerToGame, startGame } = require("./preGameFunctions");
 
 describe("Turn Compiler", () => {
 
@@ -57,10 +57,10 @@ describe("Turn Compiler", () => {
         const pl2 = getPlayerForUserInGame(game1, { id: "user-2" });
 
         const pl1_order_1 = {
-            type: "MOVE",
+            type: "moveUnit",
             turn: game1.turn,
             data: {
-                to: "area_2",
+                to: "planet-3-area-5",
                 units: [
                     "unit-id-1",
                     "unit-id-2",
@@ -70,13 +70,11 @@ describe("Turn Compiler", () => {
         };
 
         const pl2_order_1 = {
-            type: "BUILD",
+            type: "recruitUnit",
             turn: game1.turn,
             data: {
-                to: "area_4",
-                buildings: [
-                    "building-type-id-1"
-                ]
+                to: "planet-3-area-1",
+                unit: "troop-1"
             }
         };
 

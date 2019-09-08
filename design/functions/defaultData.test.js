@@ -1,5 +1,5 @@
 
-const { defaultAreas } = require('./defaultData');
+const { defaultAreas } = require('./defaultAreas');
 
 describe("Test Area data", () => {
 

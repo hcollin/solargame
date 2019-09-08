@@ -1,5 +1,6 @@
 
 const { randomId } = require("./utils.js");
+const { defaultAreas } = require('./defaultAreas');
 
 /**
  * Create a new game
@@ -24,7 +25,8 @@ function createNewGame(name = null, options = {}) {
         maxTurnTimeInMs: options.maxTurnTimeInMs || (1000 * 60 * 60 * 24),        // Defaults 24h, Set to -1 for no turn time limit
         alwaysCompile: options.alwaysCompile || false,
         gameStartedAt: null,
-        gameEndedAt: null
+        gameEndedAt: null,
+        areas: defaultAreas,
 
     };
 
