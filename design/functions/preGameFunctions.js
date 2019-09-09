@@ -71,6 +71,9 @@ function addNewPlayerToGame(gameState, user, playerOptions) {
         name: playerOptions.name,
         faction: playerOptions.faction,
         turn: 0,
+        units: new Map(),
+        buildings: new Map(),
+        technology: new Map(),
     };
     newState.players.push(newPlayer);
 

@@ -11,16 +11,36 @@ function moveUnit(gameState, player, orderData) {
 
 
 
-function recruitUnit(gameState, player, orderData) {
+function recruitUnit(gameState, player, orderObject) {
 
-    // if(defaultUnits[orderData.data.unit] === undefined) {
-    //     throw new Error(`Cannot rectuit unknown unit type ${unitId}`);
-    // }
+    const unitTypeId = orderObject.data.data.unit;
+    if(defaultUnits[unitTypeId] === undefined) {
+        throw new Error(`Cannot rectuit unknown unit type ${orderObject.orderData.unit}`);
+    }
+    // console.warn("Recruit unit\nPlayer: ", player, "\nOrder: ", orderObject);
 
-    console.warn("Recruit unit\nPlayer: ", player, "\nOrder: ", orderData);
+    
+    const unit = Object.assign({}, defaultUnits[unitTypeId], {
+        id: randomId("unit-"),
+        player: player.id
+    });
 
+    unit.experience = 0;
+    unit.state = unit.baseStats;
+    unit.location = orderObject.data.data.area;
+    unit.commands = [];
 
-    return gameState;
+    unit.commands.push({
+        type: orderObject.type,
+        timestamp: Date.now(),
+        orderId: orderObject.id
+    });
+
+    const newState = Object.assign({}, gameState);
+    const newPlayer = newState.players.find(pl => pl.id === player.id);
+    newPlayer.units.set(unit.id, unit);
+
+    return newState;
 }
 
 
@@ -29,7 +49,7 @@ function main(gameState, playerId, order) {
     if(player === undefined) {
         throw new Error(`Player id ${playerId} is unknown`);
     }
-    switch (order.orderData.type) {
+    switch (order.type) {
         case "moveUnit":
             return moveUnit(gameState, player, order);
         case "recruitUnit":

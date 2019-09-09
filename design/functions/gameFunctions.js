@@ -60,7 +60,8 @@ function addOrder(gameState, player, order) {
         turn: gameState.turn,
         player: player.id,
         timeStamp: Date.now(),
-        orderData: order,
+        type: order.type,
+        data: order,
     });
 
     return newState;

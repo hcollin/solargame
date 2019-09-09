@@ -9,8 +9,10 @@ describe("Turn Compiler", () => {
 
     function createGame(playerCount = 4) {
         let game = createNewGame("Test Game", { maxPlayers: playerCount, maxTurnTimeInMs: 1, alwaysCompile: true });
+        const players = [];
         for (let p = 1; p <= playerCount; p++) {
-            addNewPlayerToGame(game, { id: `user-${p}` }, { name: `Player ${p}`, faction: `Faction ${p}` });
+            game = addNewPlayerToGame(game, { id: `user-${p}` }, { name: `Player ${p}`, faction: `Faction ${p}` });
+            players.push(getPlayerForUserInGame(game, {id: `user-${p}`}));
         }
         return startGame(game);
     }
@@ -91,8 +93,6 @@ describe("Turn Compiler", () => {
         expect(game2_0.turn).toBe(2);
         expect(game2_0.orders.length).toBe(0);
         expect(game2_0.compiledOrders.length).toBe(2);
-
-
     });
 
 

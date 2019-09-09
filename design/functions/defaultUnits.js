@@ -22,5 +22,5 @@ const defaultUnits = {
     }
 };
 
-module.exports = {defaultUnits};
+module.exports = { defaultUnits };
 

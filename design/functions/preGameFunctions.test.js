@@ -9,7 +9,7 @@ describe("Pre Game functions", () => {
         expect(game.minPlayers).toBe(2);
         expect(typeof game.id).toBe("string");
         expect(game.maxTurnTimeInMs).toBe(1000*60*60*24);
-        expect(game)
+        expect(game.areas).toBeDefined();
     });
 
     it("Add new players to the game and start it!", () => {
