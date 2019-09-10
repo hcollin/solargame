@@ -1,31 +1,22 @@
 
 const { randomId } = require('./utils');
 
-function createDb(initVals) {
-
+/**
+ * Synchronous data storage 
+ * 
+ * 
+ * @param {Array|Object} [initVals] - Set up initial collections
+ */
+function createDb(initVals=null) {
 
     const data = new Map();
 
-    if(Array.isArray(initVals)) {
-        initVals.forEach(colName => {
-            data.set(colName, new Map());
-        });
-    } else {
-        if(typeof initVals === "object" && initVals !== null) {
-            Object.keys(initVals).forEach(col => {
-                data.set(col, new Map);
-                const values = initVals[col];
-                if(Array.isArray(values)) {
-                    values.forEach(val => {
-                        set(col, null, val);
-                    })
-                }
-            })
-        }
-    }
-
-    
-
+    /**
+     * Get a collection or a single value from db
+     * @param {string} collectionId - Collection id
+     * @param {string} [itemId] - Item dbId
+     * @returns {*} Either the collection as an array or value of the target item.
+     */
     function get(collectionId, itemId = null) {
         if (data.has(collectionId)) {
             const items = data.get(collectionId);
@@ -41,12 +32,22 @@ function createDb(initVals) {
         return;
     }
 
-    function set(collectionId, itemId = null, itemData) {
+    /**
+     * Set a new value into a collection.
+     * 
+     * Creates a new collection if it did not exists before.
+     * 
+     * @param {string} collectionId - The id of the collection where to store the item
+     * @param {string|null} itemDbId - A string that that is used the unique id. Also if the item already has a set dbId it is used. Creates an automatic id with null
+     * @param {*} itemData - Data to be stored into the
+     */
+    function set(collectionId, itemDbId = null, itemData) {
         if (!data.has(collectionId)) {
             data.set(collectionId, new Map());
         }
-        if (typeof itemId === "string" || itemData.dbId !== undefined) {
-            const id = itemId ? itemId : itemdData.dbId;
+        if (typeof itemDbId === "string" || itemData.dbId !== undefined) {
+            const id = itemDbId ? itemDbId : itemdData.dbId;
+            itemData.dbId = id;
             data.get(collectionId).set(id, itemData);
             return data;
         }
@@ -57,6 +58,12 @@ function createDb(initVals) {
         return itemData;
     }
 
+    /**
+     * Delete item from collection or clear a collection
+     * 
+     * @param {*} collectionId 
+     * @param {*} itemId 
+     */
     function del(collectionId, itemId = null) {
 
         if (!data.has(collectionId)) return false;
@@ -78,10 +85,39 @@ function createDb(initVals) {
         return false;
     }
 
+    function reset(resetToThis=null) {
+        const resetState = resetToThis ? resetToThis : initVals;
+        data.clear();
+        if(Array.isArray(resetState)) {
+            resetState.forEach(colName => {
+                data.set(colName, new Map());
+            });
+        } else {
+            if(typeof resetState === "object" && resetState !== null) {
+                Object.keys(resetState).forEach(col => {
+                    data.set(col, new Map);
+                    const values = resetState[col];
+                    if(Array.isArray(values)) {
+                        values.forEach(val => {
+                            if(typeof val.dbId === "string") {
+                                set(col, val.dbId, val);
+                            } else {
+                                set(col, null, val);
+                            } 
+                        });
+                    }
+                })
+            }
+        }
+    }
+
+    reset(initVals);
+
     return {
         get,
         set,
-        del
+        del,
+        reset
     }
 }
 

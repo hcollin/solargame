@@ -1,8 +1,24 @@
 const { createNewGame, addNewPlayerToGame, startGame } = require("./preGameFunctions");
+const USER = require('./userFunctions');
+const DB = require('./testDb');
 
 describe("Pre Game functions", () => {
+    
+    beforeEach( () => {
+        USER.create("user-1","1234", "Alpha Gamer!");        
+        USER.create("user-2","1234", "The Winner");
+        USER.create("user-3","1234", "Noob");
+    });
+
+    afterEach( () => {
+        DB.reset();
+        expect(DB.get().size).toBe(0);
+    })
+    
     it("Game is created", () => {
-        const game = createNewGame("Test Game", {});
+        const session = USER.login("user-1", "1234");
+        
+        const game = createNewGame(session.dbId, "Test Game", {});
 
         expect(game.name).toBe("Test Game");
         expect(game.maxPlayers).toBe(8);
@@ -10,108 +26,67 @@ describe("Pre Game functions", () => {
         expect(typeof game.id).toBe("string");
         expect(game.maxTurnTimeInMs).toBe(1000*60*60*24);
         expect(game.areas).toBeDefined();
+
+
     });
 
     it("Add new players to the game and start it!", () => {
-        const game = createNewGame("Test Game", { maxPlayers: 4 });
-        expect(game.maxPlayers).toBe(4);
+        
+        const session = USER.login("user-1", "1234");
 
-        const game1 = addNewPlayerToGame(
-            game,
-            { id: "user-id-1" },
-            {
-                name: "Player 1",
-                faction: "Faction 1",
-            }
-        );
-        expect(game1.players.length).toBe(1);
+        const game = createNewGame(session.dbId, "Test Game", { maxPlayers: 2 });
 
-        const game2 = addNewPlayerToGame(
-            game1,
-            { id: "user-id-2" },
-            {
-                name: "Player 2",
-                faction: "Faction 2",
-            }
-        );
-        expect(game2.players.length).toBe(2);
+        addNewPlayerToGame(session.dbId, game.dbId,{
+            name: "Ruler",
+            faction: "Faction 1",
+            hqArea: "planet-3-area-1"
+        });
 
-        // The same user cannot join the same game twice
-        expect(() => {
-            const gamefail = addNewPlayerToGame(
-                game2,
-                { id: "user-id-2" },
-                {
-                    name: "Player 3",
-                    faction: "Faction 3",
-                }
-            );
-        }).toThrow();
+        expect(DB.get("games", game.dbId).players.length).toBe(1);
 
-        // Player name must be unique among the players in the game
-        expect(() => {
-            const gamefail = addNewPlayerToGame(
-                game2,
-                { id: "user-id-3" },
-                {
-                    name: "Player 2",
-                    faction: "Faction 3",
-                }
-            );
-        }).toThrow();
+        // Second player
+        const session2 = USER.login("user-2", "1234");
 
-        // Player faction must be unique among the players in the game
-        expect(() => {
-            const gamefail = addNewPlayerToGame(
-                game2,
-                { id: "user-id-3" },
-                {
-                    name: "Player 3",
-                    faction: "Faction 2",
-                }
-            );
-        }).toThrow();
+        addNewPlayerToGame(session2.dbId, game.dbId,{
+            name: "Emperor",
+            faction: "Faction 2",
+            hqArea: "planet-3-area-2"
+        });
 
-        const game3 = addNewPlayerToGame(
-            game2,
-            { id: "user-id-3" },
-            {
-                name: "Player 3",
+        const game_after_two_joins = DB.get("games", game.dbId);
+        expect(game_after_two_joins.players.length).toBe(2);
+
+        // Same user cannot join twice to the same game
+        expect( () => {
+            addNewPlayerToGame(session.dbId, game.dbID, {
+                name: "Another Emperor",
                 faction: "Faction 3",
-            }
-        );
-
-        const game4 = addNewPlayerToGame(
-            game3,
-            { id: "user-id-4" },
-            {
-                name: "Player 4",
-                faction: "Faction 4",
-            }
-        );
-
-        expect(game4.players.length).toBe(4);
-
-        // Cannot join a game that is full
-        expect(() => {
-            const gamefail = addNewPlayerToGame(
-                game2,
-                { id: "user-id-5" },
-                {
-                    name: "Player 5",
-                    faction: "Faction 5",
-                }
-            );
+                hqArea: "planet-3-area-5"
+            }); 
         }).toThrow();
 
-        const gameRunning = startGame(game4);
+        // Users have knowledge of their game and respective players
+        const user1 = USER.authenticate(session);
+        const user2 = USER.authenticate(session2);
+        
+        expect(DB.get("users", user1.dbId).games.has(game.dbId)).toBeTruthy();
+        expect(DB.get("users", user2.dbId).games.has(game.dbId)).toBeTruthy();
 
-        expect(gameRunning.turn).toBe(1);
-        expect(gameRunning.playersReadyForThisTurn).toEqual([]);
-        expect(gameRunning.gameStartedAt).toBeLessThanOrEqual(Date.now());
-        expect(gameRunning.orders.length).toBe(0);
-        expect(gameRunning.compiledOrders.length).toBe(0);
-        expect(gameRunning.lastTurnCompiledAt).toBeLessThanOrEqual(Date.now());
-        expect(gameRunning.lastTurnCompiledAt).toBeGreaterThan(Date.now()-200);
+        startGame(session, game.dbId);
+
+        const startedGame = DB.get("games", game.dbId);
+        expect(startedGame.turn).toBe(1);
+        expect(startedGame.gameStartedAt).toBeGreaterThan(100);
+
+        // Game cannot be joined after the game has started
+        const session3 = USER.login("user-3", "1234");
+        expect( () => {
+            addNewPlayerToGame(session3.dbId, game.dbID, {
+                name: "Fred the Friendly",
+                faction: "Faction 3",
+                hqArea: "planet-3-area-5"
+            }); 
+        }).toThrow();
+
     });
 });

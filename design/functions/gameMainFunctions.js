@@ -2,13 +2,20 @@ const { randomId } = require("./utils.js");
 
 const Orders = require("./gameOrders");
 
+const DB = require('./testDb');
+const USER = require('./userFunctions');
+
 /**
  * Compile new gamestate from current state and player commands
  *
- * @param {*} gameState
- * @param {*} orders
+ * @param {*} gameid
  */
-function turnCompiler(gameState) {
+function turnCompiler(gameId) {
+    
+    const gameState = DB.get("games", gameId);
+
+    if(!gameState) throw new Error(`Game with id ${gameId} was not found`);
+
     if (gameState.gameStartedAt === null || gameState.gameEndedAt !== null) {
         throw new Error(
             `Game '${gameState.id}' cannot be compiled as it is not running. Started: ${gameState.gameStartedAt}, Finished: ${gameState.gameEndedAt}`
@@ -47,10 +54,16 @@ function turnCompiler(gameState) {
     newState.turn++;
     newState.lastTurnCompiledAt = Date.now();
     newState.playersReadyForThisTurn = [];
+
+    DB.set("games", gameId, newState);
     return newState;
 }
 
-function addOrder(gameState, player, order) {
+function addOrder(session, gameId, order) {
+    
+    const player = getMyPlayerForGame(session, gameId);
+    const gameState = DB.get("games", gameId);
+    
     const newState = { ...gameState };
 
     newState.orders.push({
@@ -63,6 +76,7 @@ function addOrder(gameState, player, order) {
         data: order,
     });
 
+    DB.set("games", gameId, newState);
     return newState;
 }
 
@@ -74,7 +88,19 @@ function deleteOrder(gameState, orderId) {
     return newState;
 }
 
-function commitTurn(gameState, player) {
+function commitTurn(session, gameId) {
+    const player = getMyPlayerForGame(session, gameId);
+    const gameState = DB.get("games", gameId);
+    if(!gameState) {
+        throw new Error(`Game Id '${gameId}' is missing or invalid `);
+    }
+    if(gameState.turn === 0) {
+        throw new Error(`Game Id '${gameId}' has not started yet`);
+    }
+    
+    
+    
+    
     if (gameState.playersReadyForThisTurn.find(pl => pl === player.id)) {
         throw new Error(`Player ${player.name} has already commited his/her turn`);
     }
@@ -85,7 +111,7 @@ function commitTurn(gameState, player) {
 
     // Execute turnCompiler if all players have provided their turn.
     if (newState.playersReadyForThisTurn.length === newState.players.length) {
-        return turnCompiler(newState);
+        return turnCompiler(gameId);
     }
 
     return newState;
@@ -94,11 +120,17 @@ function commitTurn(gameState, player) {
 /**
  * Returns filters the game state so that no information that the player cannot see is shown.
  * 
- * @param {*} user 
- * @param {*} gameState 
+ * @param {*} session 
+ * @param {*} gameId 
  */
-function getGameStateForUser(user, gameState) {
-    const currentPlayer = getPlayerForUserInGame(gameState, user);
+function getGameStateForUser(session, gameId) {
+
+    const currentPlayer = getMyPlayerForGame(session, gameId);
+    const gameState = DB.get("games", gameId);
+
+    if(!gameState) {
+        throw new Error(`No game found for game id ${gameId}`);
+    }
 
     const playerState = { ...gameState };
     playerState.players = gameState.players.map(player => {
@@ -128,8 +160,21 @@ function getGameStateForUser(user, gameState) {
     return playerState;
 }
 
+function getMyPlayerForGame(session, gameId) {
+    const user = USER.authenticate(session);
+
+    const game = DB.get("games", gameId);
+
+    const player = game.players.find(pl => pl.user === user.dbId);
+    if(!player) {
+        throw new Error(`No player found for user ${user.dbId} in game ${game.dbId}`);
+    }
+
+    return player;
+}
+
 function getPlayerForUserInGame(gameState, user) {
     return gameState.players.find(pl => pl.user === user.id);
 }
 
-module.exports = { turnCompiler, addOrder, commitTurn, deleteOrder, getPlayerForUserInGame, getGameStateForUser };
+module.exports = { turnCompiler, addOrder, commitTurn, deleteOrder, getPlayerForUserInGame, getGameStateForUser, getMyPlayerForGame };

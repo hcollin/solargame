@@ -2,6 +2,10 @@
 const { randomId } = require("./utils.js");
 const { defaultAreas } = require('./defaultAreas');
 
+const DB = require('./testDb');
+const USER = require('./userFunctions');
+
+
 /**
  * Create a new game
  * 
@@ -12,7 +16,11 @@ const { defaultAreas } = require('./defaultAreas');
  * @param {number} [options.maxPlayers] - Maximum number of players in the game, defaults to 8
  * @param {number} [options.minPlayers] - Minimum number of players in the game, defualts to 2
  */
-function createNewGame(name = null, options = {}) {
+function createNewGame(sessionId, name = null, options = {}) {
+    
+    const user = USER.authenticate(sessionId);
+    
+
     if (name === null) throw `A game needs a name as a string!`;
 
     const gameState = {
@@ -21,7 +29,7 @@ function createNewGame(name = null, options = {}) {
         turn: 0,
         players: [],
         maxPlayers: options.maxPlayers || 8,
-        minPlayers: options.minPlayers || 2,
+        minPlayers: typeof options.minPlayers === "number" ? options.minPlayers : 2,
         maxTurnTimeInMs: options.maxTurnTimeInMs || (1000 * 60 * 60 * 24),        // Defaults 24h, Set to -1 for no turn time limit
         alwaysCompile: options.alwaysCompile || false,
         gameStartedAt: null,
@@ -29,6 +37,8 @@ function createNewGame(name = null, options = {}) {
         areas: defaultAreas,
 
     };
+
+    DB.set("games", gameState.id, gameState);
 
     return gameState;
 }
@@ -41,7 +51,16 @@ function createNewGame(name = null, options = {}) {
  * @param {object} user 
  * @param {object} playerOptions 
  */
-function addNewPlayerToGame(gameState, user, playerOptions) {
+function addNewPlayerToGame(sessionId, gameId, playerOptions, userId=null) {
+
+    const sessionUser = USER.authenticate(sessionId);
+    const user = userId ? DB.get("users", userId) : sessionUser;
+
+    if(!user) {
+        throw new Error(`Unknown user! ${sessionUser.name} ${userId}`);
+    }
+
+    const gameState = DB.get("games", gameId);
 
     if (gameState.players.length >= gameState.maxPlayers) { 
         throw new Error(`Cannot join the game. Cannot exceed the maximum number of players ${gameState.maxPlayers} for this game.`);
@@ -63,13 +82,11 @@ function addNewPlayerToGame(gameState, user, playerOptions) {
         throw new Error(`Cannot join the game. The game has already started.`); 
     }
 
-
-
     const newState = Object.assign({}, gameState);
 
     const newPlayer = {
         id: randomId("player-"),
-        user: user.id,
+        user: user.dbId,
         name: playerOptions.name,
         faction: playerOptions.faction,
         turn: 0,
@@ -81,9 +98,11 @@ function addNewPlayerToGame(gameState, user, playerOptions) {
 
     newPlayer.areasVisible.set(playerOptions.hqArea, {id: playerOptions.hqArea, visible: true});
 
-
     newState.players.push(newPlayer);
-
+    DB.set("games", newState.dbId, newState);
+    
+    USER.joinGame(sessionId, user.dbId, newPlayer.id, newState.dbId);
+    
     return newState;
 }
 
@@ -92,9 +111,12 @@ function addNewPlayerToGame(gameState, user, playerOptions) {
  * 
  * @param {*} gameState 
  */
-function startGame(gameState) {
+function startGame(session, gameId) {
+    const sessionUser = USER.authenticate(session);
 
-    if (gameState.players.length < gameState.minPlayers) throw new Error(`Not enough players yet`);
+    const gameState = DB.get("games", gameId);
+
+    if (gameState.players.length < gameState.minPlayers) throw new Error(`Not enough players yet. Currently ${gameState.players.length} / (${gameState.minPlayers}-${gameState.maxPlayers})`);
     if (gameState.players.length > gameState.maxPlayers) throw new Error(`There are too many players in the game.`);
 
     const newState = Object.assign({}, gameState);
@@ -104,8 +126,10 @@ function startGame(gameState) {
     newState.playersReadyForThisTurn = [];
     newState.lastTurnCompiledAt = Date.now();
     newState.orders = [];
+    newState.gameStartedBy = sessionUser.dbId;
     newState.compiledOrders = [];
 
+    DB.set("games", newState.dbId, newState);
     return newState;
 }
 
