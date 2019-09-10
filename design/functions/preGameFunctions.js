@@ -63,6 +63,8 @@ function addNewPlayerToGame(gameState, user, playerOptions) {
         throw new Error(`Cannot join the game. The game has already started.`); 
     }
 
+
+
     const newState = Object.assign({}, gameState);
 
     const newPlayer = {
@@ -74,7 +76,12 @@ function addNewPlayerToGame(gameState, user, playerOptions) {
         units: new Map(),
         buildings: new Map(),
         technology: new Map(),
+        areasVisible: new Map(),
     };
+
+    newPlayer.areasVisible.set(playerOptions.hqArea, {id: playerOptions.hqArea, visible: true});
+
+
     newState.players.push(newPlayer);
 
     return newState;

@@ -18,7 +18,7 @@ describe("Game Orders", () => {
         return [startedGame, players];
     }
 
-    it("Rectuit Unit Order", () => {
+    it("Recruit Unit Order", () => {
         const [game, players] = createGame(2);
 
         const game_1_1 = addOrder(game, players[0], {
@@ -34,7 +34,6 @@ describe("Game Orders", () => {
 
         const game_2_0 = turnCompiler(game);
 
-
         expect(game_2_0.players[0].units.size).toBe(1);
 
         game_2_0.players[0].units.forEach(unit => {
@@ -42,8 +41,7 @@ describe("Game Orders", () => {
             expect(unit.state).toEqual(unit.baseStats);
             expect(unit.player).toBe(players[0].id);
             expect(unit.commands.length).toBe(1);
-        });
-        
+        });   
 
         expect(game_2_0.orders.length).toBe(0);
         expect(game_2_0.compiledOrders.length).toBe(1);

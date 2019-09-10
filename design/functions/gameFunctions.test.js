@@ -1,24 +1,40 @@
-const {sleeper} = require('./utils.js');
+const { sleeper } = require("./utils.js");
 
-const { turnCompiler, addOrder, commitTurn, deleteOrder, getPlayerForUserInGame } = require('./gameFunctions');
+const { turnCompiler, addOrder, commitTurn, deleteOrder, getPlayerForUserInGame, getGameStateForUser } = require("./gameFunctions");
 
 const { createNewGame, addNewPlayerToGame, startGame } = require("./preGameFunctions");
 
 describe("Turn Compiler", () => {
-
-
     function createGame(playerCount = 4) {
         let game = createNewGame("Test Game", { maxPlayers: playerCount, maxTurnTimeInMs: 1, alwaysCompile: true });
         const players = [];
         for (let p = 1; p <= playerCount; p++) {
-            game = addNewPlayerToGame(game, { id: `user-${p}` }, { name: `Player ${p}`, faction: `Faction ${p}` });
-            players.push(getPlayerForUserInGame(game, {id: `user-${p}`}));
+            game = addNewPlayerToGame(
+                game,
+                { id: `user-${p}` },
+                { name: `Player ${p}`, faction: `Faction ${p}`, hqArea: `planet-3-area-${p}` }
+            );
+            players.push(getPlayerForUserInGame(game, { id: `user-${p}` }));
         }
         return startGame(game);
     }
 
-    it("Turn compiling without orders", async () => {
+    function addUnitsToGame(gameState, units = []) {
+        let newState = { ...gameState };
+        units.forEach(unitInfo => {
+            newState = addOrder(newState, unitInfo.player, {
+                type: "recruitUnit",
+                turn: gameState.turn,
+                data: {
+                    to: unitInfo.area,
+                    unit: unitInfo.type || "troop-1",
+                },
+            });
+        });
+        return newState;
+    }
 
+    it("Turn compiling without orders", async () => {
         const gameState = createGame();
 
         // Wait for 5 milliseconds
@@ -32,9 +48,7 @@ describe("Turn Compiler", () => {
         expect(newState.orders.length).toBe(0);
     });
 
-
     it("If all players have committed their turn, turnCompiler will run", () => {
-
         const game1 = createGame(2);
 
         const pl1 = getPlayerForUserInGame(game1, { id: "user-1" });
@@ -63,12 +77,8 @@ describe("Turn Compiler", () => {
             turn: game1.turn,
             data: {
                 to: "planet-3-area-5",
-                units: [
-                    "unit-id-1",
-                    "unit-id-2",
-                    "unit-id-3",
-                ]
-            }
+                units: ["unit-id-1", "unit-id-2", "unit-id-3"],
+            },
         };
 
         const pl2_order_1 = {
@@ -76,8 +86,8 @@ describe("Turn Compiler", () => {
             turn: game1.turn,
             data: {
                 to: "planet-3-area-1",
-                unit: "troop-1"
-            }
+                unit: "troop-1",
+            },
         };
 
         const game1_1 = addOrder(game1, pl1, pl1_order_1);
@@ -85,7 +95,6 @@ describe("Turn Compiler", () => {
 
         const game1_2 = addOrder(game1_1, pl2, pl2_order_1);
         expect(game1_2.orders.length).toBe(2);
-
 
         const game1_3 = commitTurn(game1_2, pl1);
         const game2_0 = commitTurn(game1_3, pl2);
@@ -95,5 +104,38 @@ describe("Turn Compiler", () => {
         expect(game2_0.compiledOrders.length).toBe(2);
     });
 
+    it("Filter state to player specific information only", () => {
+        const game_1_0 = createGame(2);
 
+        const pl1 = getPlayerForUserInGame(game_1_0, { id: "user-1" });
+        const pl2 = getPlayerForUserInGame(game_1_0, { id: "user-2" });
+
+        const game_1_1 = addUnitsToGame(game_1_0, [
+            {
+                player: pl1,
+                area: "planet-3-area-1",
+                type: "troop-1",
+            },
+            {
+                player: pl2,
+                area: "planet-3-area-2",
+                type: "troop-1",
+            },
+        ]);
+
+        const game_2_0 = turnCompiler(game_1_1);
+
+        // Units have been created
+        expect(game_2_0.players[0].units.size).toBe(1);
+        expect(game_2_0.players[1].units.size).toBe(1);
+
+
+        const pl1State = getGameStateForUser({id: "user-1"}, game_2_0);
+
+        expect(pl1State.players.length).toBe(2);
+        expect(pl1State.players[0].units.size).toBe(1);     // I can see my own information
+        expect(pl1State.players[1].units.size).toBe(0);     // I cannot see opponents units on areas I have no visibility into.
+        expect(pl1State.players[1].buildings.size).toBe(0);
+
+    });
 });

@@ -4,7 +4,7 @@ const { defaultUnits } = require("./defaultUnits");
 
 function moveUnit(gameState, player, orderData) {
 
-    console.warn("Move unit\nPlayer: ", player, "\nOrder: ", orderData);
+    // console.warn("Move unit\nPlayer: ", player, "\nOrder: ", orderData);
 
     return gameState;
 }
@@ -27,7 +27,7 @@ function recruitUnit(gameState, player, orderObject) {
 
     unit.experience = 0;
     unit.state = unit.baseStats;
-    unit.location = orderObject.data.data.area;
+    unit.area = orderObject.data.data.area;
     unit.commands = [];
 
     unit.commands.push({

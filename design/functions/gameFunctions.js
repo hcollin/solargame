@@ -1,6 +1,6 @@
 const { randomId } = require("./utils.js");
 
-const Orders = require('./gameOrders');
+const Orders = require("./gameOrders");
 
 /**
  * Compile new gamestate from current state and player commands
@@ -9,7 +9,6 @@ const Orders = require('./gameOrders');
  * @param {*} orders
  */
 function turnCompiler(gameState) {
-
     if (gameState.gameStartedAt === null || gameState.gameEndedAt !== null) {
         throw new Error(
             `Game '${gameState.id}' cannot be compiled as it is not running. Started: ${gameState.gameStartedAt}, Finished: ${gameState.gameEndedAt}`
@@ -18,16 +17,17 @@ function turnCompiler(gameState) {
 
     // Check if the turn is ready to be compiled
     const allPlayersReady = gameState.playersReadyForThisTurn.length === gameState.players.length;
-    const turnTimerLimitReached = gameState.maxTurnTimeInMs >= 0 ? (gameState.lastTurnCompiledAt + gameState.maxTurnTimeInMs - Date.now()) <= 0 : false;
+    const turnTimerLimitReached =
+        gameState.maxTurnTimeInMs >= 0
+            ? gameState.lastTurnCompiledAt + gameState.maxTurnTimeInMs - Date.now() <= 0
+            : false;
     if (!allPlayersReady && !turnTimerLimitReached && !gameState.alwaysCompile) {
         console.warn(
-            `Game '${gameState.name}' cannot be compiled yet. Players Ready: ${
-                gameState.playersReadyForThisTurn.length
-            }, Turn timer limit reached: ${turnTimerLimitReached}.`
+            `Game '${gameState.name}' cannot be compiled yet. Players Ready: ${gameState.playersReadyForThisTurn.length}, Turn timer limit reached: ${turnTimerLimitReached}.`
         );
         return gameState;
     } else {
-        if(gameState.alwaysCompile && process.env.NODE_ENV !== "test") {
+        if (gameState.alwaysCompile && process.env.NODE_ENV !== "test") {
             console.warn(`Game ${gameState.id} has been set to always compile turns.}`);
         }
     }
@@ -51,7 +51,6 @@ function turnCompiler(gameState) {
 }
 
 function addOrder(gameState, player, order) {
-    
     const newState = { ...gameState };
 
     newState.orders.push({
@@ -68,17 +67,14 @@ function addOrder(gameState, player, order) {
 }
 
 function deleteOrder(gameState, orderId) {
-
     const newState = { ...gameState };
 
-    newState.orders =  gameState.orders.filter(or => or.id === orderId);
+    newState.orders = gameState.orders.filter(or => or.id === orderId);
 
     return newState;
-
 }
 
 function commitTurn(gameState, player) {
-    
     if (gameState.playersReadyForThisTurn.find(pl => pl === player.id)) {
         throw new Error(`Player ${player.name} has already commited his/her turn`);
     }
@@ -95,8 +91,45 @@ function commitTurn(gameState, player) {
     return newState;
 }
 
+/**
+ * Returns filters the game state so that no information that the player cannot see is shown.
+ * 
+ * @param {*} user 
+ * @param {*} gameState 
+ */
+function getGameStateForUser(user, gameState) {
+    const currentPlayer = getPlayerForUserInGame(gameState, user);
+
+    const playerState = { ...gameState };
+    playerState.players = gameState.players.map(player => {
+        if (player.id === currentPlayer.id) return player;
+
+        const otherPlayer = { ...player };
+
+        otherPlayer.units = new Map();
+        otherPlayer.buildings = new Map();
+        otherPlayer.technology = new Map();
+
+        player.units.forEach(item => {
+            if (currentPlayer.areasVisible.has(item.area)) {
+                otherPlayer.units.set(item.id, item);
+            }
+        });
+
+        player.buildings.forEach(item => {
+            if (currentPlayer.areasVisible.has(item.area)) {
+                otherPlayer.buildings.set(item.id, item);
+            }
+        });
+
+        return otherPlayer;
+    });
+
+    return playerState;
+}
+
 function getPlayerForUserInGame(gameState, user) {
     return gameState.players.find(pl => pl.user === user.id);
 }
 
-module.exports = { turnCompiler, addOrder, commitTurn, deleteOrder, getPlayerForUserInGame };
+module.exports = { turnCompiler, addOrder, commitTurn, deleteOrder, getPlayerForUserInGame, getGameStateForUser };
