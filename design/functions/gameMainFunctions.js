@@ -55,6 +55,12 @@ function turnCompiler(gameId) {
     newState.lastTurnCompiledAt = Date.now();
     newState.playersReadyForThisTurn = [];
 
+    newState.players = newState.players.map(pl => {
+        pl.actionPointsCurrent = pl.actionPointsMax;
+        pl.turn = newState.turn;
+        return pl;
+    })
+
     DB.set("games", gameId, newState);
     return newState;
 }

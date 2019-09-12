@@ -87,6 +87,8 @@ function addNewPlayerToGame(sessionId, gameId, playerOptions, userId=null) {
     const newPlayer = {
         id: randomId("player-"),
         user: user.dbId,
+        actionPointsMax: 100,
+        currentActionPoints: 100,
         name: playerOptions.name,
         faction: playerOptions.faction,
         turn: 0,
@@ -94,6 +96,11 @@ function addNewPlayerToGame(sessionId, gameId, playerOptions, userId=null) {
         buildings: new Map(),
         technology: new Map(),
         areasVisible: new Map(),
+        resources: {
+            credits: 100,
+            materials: 10,
+            influence: 2,    
+        }
     };
 
     newPlayer.areasVisible.set(playerOptions.hqArea, {id: playerOptions.hqArea, visible: true});
