@@ -88,7 +88,7 @@ function addNewPlayerToGame(sessionId, gameId, playerOptions, userId=null) {
         id: randomId("player-"),
         user: user.dbId,
         actionPointsMax: 100,
-        currentActionPoints: 100,
+        actionPointsCurrent: 100,
         name: playerOptions.name,
         faction: playerOptions.faction,
         turn: 0,

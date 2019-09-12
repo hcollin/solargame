@@ -10,5 +10,8 @@
   },
   "devDependencies": {
     "jest": "^24.9.0"
+  },
+  "dependencies": {
+    "express": "^4.17.1"
   }
 }
