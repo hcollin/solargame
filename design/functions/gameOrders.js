@@ -3,6 +3,8 @@ const { defaultUnits } = require("./defaultUnits");
 
 const BUILDING = require("./gameBuildingOrders");
 const UNIT = require("./gameUnitOrders");
+const TECHOLOGY = require('./technologyOrders');
+const PERSON = require('./personnelOrders');
 
 function main(gameState, playerId, order) {
     const player = gameState.players.find(pl => pl.id === playerId);
