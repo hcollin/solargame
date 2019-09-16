@@ -34,6 +34,6 @@ export default function jokiServiceStateMachine(jokiInstance, serviceId, states)
 
     return {
         eventHander: stateMachineEventHandler,
-        goto: 
+        goto: gotoState
     };
 }
